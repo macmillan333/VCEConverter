@@ -4,8 +4,9 @@ using namespace std;
 
 // vce-de.cpp : de-encryptor for djmax's vce, vci and vcq files.
 // Generic xor (un)masker
-// Input: files to decrypt
-// Output: new decrypted files, apending ".vceDC" to the filename.
+// Drag and drop anyfile to it to decrypt. D&D it again to re-encrypt it.
+// 
+// W/O drag and dropping: opens file named "in", appends ".vceDC" to its filename.
 //
 // Made by intron ( fdbf11@gmail.com )
 
