@@ -130,14 +130,8 @@ public:
 };
 
 void texname2str(char *name) {
-    int a;
-    a=strlen(name);
     //append bmp extension
-    name[a]='.';
-    name[a+1]='b';
-    name[a+2]='m';
-    name[a+3]='p';
-    name[a+4]=0;
+    strcat(name,".bmp");
 }
 
 void tex2bmp(char *filename){
@@ -151,7 +145,7 @@ in the folder.\n:: Change the Image Magick path if you need.\n\
 :: \n:: \n@echo off\n\
 \"%%PROGRAMFILES(X86)%%\\ImageMagick-7.0.8-Q16\\magick\" %%1 ( -clone 0 \
 -background #ff00ff ) +swap -background #ff00ff -layers merge +repage \
--define bmp3:alpha=false BMP3:%%1.bmp\n";
+-define bmp3:alpha=true BMP3:%%1.bmp\n";
 
     //make a bat if there is none
     tmp=fopen(".\\img2bmp.bat","r");
@@ -197,7 +191,7 @@ int main(int argc, char *argv[])
          return -1;
 
     } else { //parse params
-        printf("VCE2STR converter (C) 2018 fdbf11@gmail.com , github.com/alejandrodh . License GNUGPLv3\n");
+        printf("VCE2STR converter v1 (C) 2018 ADHSoft ( github.com/ADHSoft ).\n");
 
         while (argcindex<argc) {
             if (strcmp(argv[argcindex],"-d")==0) {
