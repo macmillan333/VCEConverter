@@ -1,0 +1,10 @@
+# depslib dependency file v1.0
+1548645437 source:c:\users\int\documents\vceconverter\main.cpp
+	<iostream>
+	"structss.h"
+	"string.h"
+	"stdio.h"
+	<stdlib.h>
+
+1548629574 c:\users\int\documents\vceconverter\structss.h
+
