@@ -7,7 +7,7 @@ using namespace std;
 #include <stdlib.h>
 #define nullptr NULL
 
-char title_text[]="VCE2STR converter v1.1 (C) 2018 ADHSoft ( github.com/ADHSoft ).\n";
+char title_text[]="VCE2STR converter v1.1 (C) github.com/ADHSoft .\n";
 char readme[]="License GNUGPLv3\n\
 The Vce file format is used for UI's and bg animations in the djm. series.\n\
 The str format is from the R.O. misc. animations. \n\
@@ -209,10 +209,10 @@ int main(int argc, char *argv[])
                         if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='M') { //vce
                             masked=0;
                             if (stringg[13]==0){
-                                printf("Type:Unmasked VCE file\n");
+                                printf("Type: Unmasked VCE file\n");
                                 masked=0;
                             } else {
-                                printf("Type:Masked VCE file\n");
+                                printf("Type: VCE file\n");
                                 unmask_vc(argv[argcindex]);
                                 masked=1;
                             }
