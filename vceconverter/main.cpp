@@ -5,27 +5,26 @@ using namespace std;
 #include "string.h"
 #include "stdio.h"
 #include <stdlib.h>
-
 #define nullptr NULL
 
-char readme[]="\
-VCE2STR converter v1 (C) 2018 ADHSoft ( github.com/ADHSoft ). License GNUGPLv3\n\
-The Vce file format is used for UI's and bg animations in the djmax(tm) series.\n\
-The str format is from the rangarok online(tm) misc. animations. \n\
+char title_text[]="VCE2STR converter v1.1 (C) 2018 ADHSoft ( github.com/ADHSoft ).\n";
+char readme[]="License GNUGPLv3\n\
+The Vce file format is used for UI's and bg animations in the djm. series.\n\
+The str format is from the R.O. misc. animations. \n\
 This format is still being used in the PSVita(tm) DJM. game for the UI. \n\
 \n\
 This program aims to convert VCEs into STRs so you can edit them\n\
 using the existing STR editors, like the buggy 'RO STR Viewer'.\n\
 As that app only supports bmp or tga formats, this program can also convert\n\
 your images to bmp, w/ pink transparency calling your preinstalled Imagemagick.\n\
-This app can't read VCI files (mostly used for UI) YET, but it will decrypt them (vc files too).\n\
+This app can't read VCI files (mostly used for UI) YET, but it will unmask them (vc files too).\n\
 Simple tweaks to this app must be made to do so (you are welcome to code).\n\
 \n\
 \n\
 USAGE: vceconverter -f -d file1.vce (file2.vce) (...) \n\
 Parameters: -f : do not convert image files, and don't change filename references.\n\
--d : just decrypt or encrypt a file.\n\
-input files: vce, vce uncrypted, or str files (autodetected)\n\
+-d : just mask or unmask a file.\n\
+input files: vce, vce unmasked, or str files (autodetected)\n\
 ";
 
 class anikey{   //(aka key frame)
@@ -51,7 +50,6 @@ public:
         anikey *last = new anikey , *temp = new anikey;
         last->next=nullptr;
         temp=a->getlast();
-
         temp->next=last;
 
     }
@@ -174,11 +172,11 @@ in the folder.\n:: Change the Image Magick path if you need.\n\
 }
 
 int vce2str(char*);
-void decrypt_djfile(char *);
+void unmask_vc(char *);
 void printvcq();
 
 FILE *infile;
-int just_crypt=0,bmp_conv=1,crypted=0;
+int just_mask=0,bmp_conv=1,masked=0;
 
 int main(int argc, char *argv[])
 {
@@ -187,15 +185,16 @@ int main(int argc, char *argv[])
     char stringg[100];
 
     if (argc == 1) {	//no parameter, print help
+        printf("%s",title_text);
          printf("%s",readme);
          return -1;
 
     } else { //parse params
-        printf("VCE2STR converter v1 (C) 2018 ADHSoft ( github.com/ADHSoft ).\n");
+        printf("%s",title_text);
 
         while (argcindex<argc) {
             if (strcmp(argv[argcindex],"-d")==0) {
-                just_crypt=1;
+                just_mask=1;
             } else {
                 if (strcmp(argv[argcindex],"-f")==0) {
                     bmp_conv=0;
@@ -208,22 +207,22 @@ int main(int argc, char *argv[])
                         printf("Opened %s \n",argv[argcindex]);
                         fread(stringg,sizeof(char),20,infile);
                         if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='M') { //vce
-                            crypted=0;
+                            masked=0;
                             if (stringg[13]==0){
-                                printf("Type:Decrypted VCE file\n");
-                                crypted=0;
+                                printf("Type:Unmasked VCE file\n");
+                                masked=0;
                             } else {
-                                printf("Type:Encrypted VCE file\n");
-                                decrypt_djfile(argv[argcindex]);
-                                crypted=1;
+                                printf("Type:Masked VCE file\n");
+                                unmask_vc(argv[argcindex]);
+                                masked=1;
                             }
                             rewind(infile);
 
-                            if (just_crypt==0) {
+                            if (just_mask==0) {
                                 vce2str(argv[argcindex]);
-                                if (crypted==1) decrypt_djfile(argv[argcindex]);//re encrypt
+                                if (masked==1) unmask_vc(argv[argcindex]);//re mask
                             } else {
-                                if (crypted==0) decrypt_djfile(argv[argcindex]);//encrypt
+                                if (masked==0) unmask_vc(argv[argcindex]);//mask
                             }
                         } else {    //not vce
                             if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='Q') {
@@ -322,17 +321,16 @@ int vce2str(char *path) {
 
 }
 
-void decrypt_djfile(char *path){
+void unmask_vc(char *path){
 
-    #define KEY_LENGTH 256
-    const unsigned char key[] = {
+    #define MASK_LENGTH 256
+    const unsigned char mask[] = {
         247 ,77 ,219 ,74 ,220 ,102 ,240 ,83 ,197 ,127 ,233 ,28 ,138 ,48 ,166 ,5 ,147 ,41 ,191 ,46 ,184 ,2 ,148 ,55 ,161 ,27 ,141 ,0 ,150 ,44 ,186 ,25 ,143 ,53 ,163 ,50 ,164 ,30 ,136 ,43 ,189 ,7 ,145 ,100 ,242 ,72 ,222 ,125 ,235 ,81 ,
         199 ,86 ,192 ,122 ,236 ,79 ,217 ,99 ,245 ,200 ,94 ,228 ,114 ,209 ,71 ,253 ,107 ,250 ,108 ,214 ,64 ,227 ,117 ,207 ,89 ,172 ,58 ,128 ,22 ,181 ,35 ,153 ,15 ,158 ,8 ,178 ,36 ,135 ,17 ,171 ,61 ,144 ,6 ,188 ,42 ,137 ,31 ,165 ,51 ,162 ,
         52 ,142 ,24 ,187 ,45 ,151 ,1 ,244 ,98 ,216 ,78 ,237 ,123 ,193 ,87 ,198 ,80 ,234 ,124 ,223 ,73 ,243 ,101 ,88 ,206 ,116 ,226 ,65 ,215 ,109 ,251 ,106 ,252 ,70 ,208 ,115 ,229 ,95 ,201 ,60 ,170 ,16 ,134 ,37 ,179 ,9 ,159 ,14 ,152 ,34 ,
         180 ,23 ,129 ,59 ,173 ,32 ,182 ,12 ,154 ,57 ,175 ,21 ,131 ,18 ,132 ,62 ,168 ,11 ,157 ,39 ,177 ,68 ,210 ,104 ,254 ,93 ,203 ,113 ,231 ,118 ,224 ,90 ,204 ,111 ,249 ,67 ,213 ,232 ,126 ,196 ,82 ,241 ,103 ,221 ,75 ,218 ,76 ,246 ,96 ,195 ,85 , 239, 121, 140, 26, 160, 54, 149,
         3 ,185 , 47 ,190 ,40 ,146 ,4 ,167 ,49 ,139 ,29 ,176 ,38 ,156 ,10 ,169 ,63 ,133 ,19 ,130 ,20 ,174 ,56 ,155 ,13 ,183 ,33 ,212 ,66 ,248 ,110 ,205 ,91 ,225 ,119 ,230 ,112 ,202 ,92 ,255 ,105 ,211 ,69 ,120 ,238 ,84 ,194 ,97
     };
-
 
     int c, i, k_pos,header;
     char str[200];
@@ -368,13 +366,13 @@ void decrypt_djfile(char *path){
             header--;
             c = i;
         } else {
-                c = i ^ key[k_pos];	//xor the byte with the key
+                c = i ^ mask[k_pos];	//xor the byte with the mask
         }
 
         fputc(c,f); //write byte to file
 
         k_pos++;
-        if (k_pos==KEY_LENGTH) {	//loop the key index
+        if (k_pos==MASK_LENGTH) {	//loop the mask index
             k_pos=0;
         }
 
@@ -390,8 +388,6 @@ void decrypt_djfile(char *path){
 }
 
 void printvcq(){
-
-
 
 
 
