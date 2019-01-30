@@ -215,7 +215,7 @@ int main(int argc, char *argv[])
                             } else {
                                 printf("Unmasked ");
                             }
-                            if ( (stringg[0x30]==0) || stringg[0x30]==0xEB ) {
+                            if ( (stringg[8]==2) || stringg[8]==0x7c ) {
                                 vci=1;
                                 printf("VCI file\n");
                             } else {
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
                             rewind(infile);
 
                             if (just_mask==0) {
-                                unmask_vc(argv[argcindex]);
+                                if (masked==1) unmask_vc(argv[argcindex]);
                                 vce2str(argv[argcindex],vci);
                                 if (masked==1) unmask_vc(argv[argcindex]);//re mask
                             } else {
