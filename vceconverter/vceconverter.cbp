@@ -11,7 +11,7 @@
 				<Option object_output="obj/Debug/" />
 				<Option type="1" />
 				<Option compiler="gcc" />
-				<Option parameters='&quot;C:\Users\int\Documents\vceconverter\bin\Debug\in.vce&quot;' />
+				<Option parameters='&quot;C:\Users\int\Documents\GitHub\DJMTools\vceconverter\bin\Debug\in.vci&quot;' />
 				<Compiler>
 					<Add option="-g" />
 				</Compiler>
@@ -33,7 +33,6 @@
 			<Add option="-Wall" />
 			<Add option="-fexceptions" />
 		</Compiler>
-		<Unit filename="classess.h" />
 		<Unit filename="main.cpp" />
 		<Unit filename="structss.h" />
 		<Extensions>

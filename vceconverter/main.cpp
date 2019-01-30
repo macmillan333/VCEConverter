@@ -230,7 +230,7 @@ int main(int argc, char *argv[])
                                 vce2str(argv[argcindex],vci);
                                 if (masked==1) unmask_vc(argv[argcindex]);//re mask
                             } else {
-                                if (masked==0) unmask_vc(argv[argcindex]);//mask
+                                unmask_vc(argv[argcindex]);//mask
                             }
 
                         } else {    //not vce nor vci
