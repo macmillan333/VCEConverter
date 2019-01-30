@@ -141,7 +141,7 @@ void tex2bmp(char *filename){
 :: \n:: \n@echo off\n\
 \"%%PROGRAMFILES(X86)%%\\ImageMagick-7.0.8-Q16\\magick\" %%1 ( -clone 0 \
 -background #ff00ff ) +swap -background #ff00ff -layers merge +repage \
--define bmp3:alpha=true BMP3:%%1.bmp\n";
+-define bmp3:alpha=false BMP3:%%1.bmp\n";
 
     //make a bat if there is none
     tmp=fopen(".\\img2bmp.bat","r");
@@ -215,7 +215,9 @@ int main(int argc, char *argv[])
                             } else {
                                 printf("Unmasked ");
                             }
-                            if ( (stringg[8]==2) || stringg[8]==0x7c ) {
+                            char a;
+                            a=argv[argcindex][strlen(argv[argcindex])-1];
+                            if ( a=='I' || a=='i' ) {
                                 vci=1;
                                 printf("VCI file\n");
                             } else {
