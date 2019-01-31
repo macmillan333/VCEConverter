@@ -37,10 +37,10 @@ struct anikey_s
     float points[8]; //order: x1,x2,x3,x4,y1,y2,y3,y4
     float unk2;
     float tex_id;
-    unsigned long mode;
-    float inccount;//as appears in rostr viewer
+    unsigned long mode;//texture inc. direction
+    float inccount;//texture increment
     float color[4]; //rgba
-    unsigned long blend[3];
+    unsigned long blend[3];//source,dest,?
 
 };
 

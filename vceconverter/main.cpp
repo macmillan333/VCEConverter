@@ -19,9 +19,10 @@ As that app only supports bmp or tga formats, this program can also convert\n\
 your images to bmp, w/ pink transparency calling your preinstalled Imagemagick.\n\
 \n\
 \n\
-USAGE: vceconverter -f -d file1.vce (file2.vce) (...) \n\
+USAGE: vceconverter -f -m -b file1.vce (file2.vce) (...) \n\
 Parameters: -f : do not convert image files, and don't change filename references.\n\
--d : just mask or unmask a file.\n\
+-m : just mask or unmask a file.\n\
+-b : do not change color blend to make strviewer show backgrounds.\n\
 input files: vce or vci (autodetected)\n\
 ";
 
@@ -169,12 +170,12 @@ void tex2bmp(char *filename){
     }
 }
 
-int vce2str(char*,int);
+int vce2str(char*,int,int);
 void unmask_vc(char *);
 void printvcq();
 
 FILE *infile;
-int just_mask=0,bmp_conv=1,masked,vce,vci,vcq;
+int just_mask=0,bmp_conv=1,masked,vce,vci,vcq,fix_blend=1;
 
 int main(int argc, char *argv[])
 {
@@ -191,61 +192,60 @@ int main(int argc, char *argv[])
         printf("%s",title_text);
 
         while (argcindex<argc) {
-            if (strcmp(argv[argcindex],"-d")==0) {
-                just_mask=1;
+            if (argv[argcindex][0]=='-') {
+                if (strcmp(argv[argcindex],"-m")==0) just_mask=1;
+                if (strcmp(argv[argcindex],"-b")==0) fix_blend=0;
+                if (strcmp(argv[argcindex],"-f")==0) bmp_conv=0;
             } else {
-                if (strcmp(argv[argcindex],"-f")==0) {
-                    bmp_conv=0;
-                } else {
-                    infile = fopen (argv[argcindex],"rb");
-                    if (infile==nullptr) {
-                        printf("Error opening file %s\n",argv[argcindex]);
-                        return -1;
-                    } else {    //check format
-                        printf("Opened %s \n",argv[argcindex]);
-                        fread(stringg,sizeof(char),0x40,infile);
-                        masked=0;
-                        vce=0;
-                        vci=0;
-                        vcq=0;
-                        if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='M') { //vce/i
-                            printf("Type: ");
-                            if (stringg[13]!=0) {
-                                masked=1;
-                            } else {
-                                printf("Unmasked ");
-                            }
-                            char a;
-                            a=argv[argcindex][strlen(argv[argcindex])-1];
-                            if ( a=='I' || a=='i' ) {
-                                vci=1;
-                                printf("VCI file\n");
-                            } else {
-                                vce=1;
-                                printf("VCE file\n");
-                            }
 
-                            rewind(infile);
+                infile = fopen (argv[argcindex],"rb");
+                if (infile==nullptr) {
+                    printf("Error opening file %s\n",argv[argcindex]);
+                    return -1;
+                } else {    //check format
+                    printf("Opened %s \n",argv[argcindex]);
+                    fread(stringg,sizeof(char),0x40,infile);
+                    masked=0;
+                    vce=0;
+                    vci=0;
+                    vcq=0;
+                    if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='M') { //vce/i
+                        printf("Type: ");
+                        if (stringg[13]!=0) {
+                            masked=1;
+                        } else {
+                            printf("Unmasked ");
+                        }
+                        char a;
+                        a=argv[argcindex][strlen(argv[argcindex])-1];
+                        if ( a=='I' || a=='i' ) {
+                            vci=1;
+                            printf("VCI file\n");
+                        } else {
+                            vce=1;
+                            printf("VCE file\n");
+                        }
 
-                            if (just_mask==0) {
-                                if (masked==1) unmask_vc(argv[argcindex]);
-                                vce2str(argv[argcindex],vci);
-                                if (masked==1) unmask_vc(argv[argcindex]);//re mask
-                            } else {
-                                unmask_vc(argv[argcindex]);//mask
-                            }
+                        rewind(infile);
 
-                        } else {    //not vce nor vci
-                            if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='Q') {
-                                printf("Type: VCQ file\n");
-                                printvcq();
-                            } else {
-                                printf("Unknown format\n");
-                            }
+                        if (just_mask==0) {
+                            if (masked==1) unmask_vc(argv[argcindex]);
+                            vce2str(argv[argcindex],vci,fix_blend);
+                            if (masked==1) unmask_vc(argv[argcindex]);//re mask
+                        } else {
+                            unmask_vc(argv[argcindex]);//mask
+                        }
+
+                    } else {    //not vce nor vci
+                        if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='Q') {
+                            printf("Type: VCQ file\n");
+                            printvcq();
+                        } else {
+                            printf("Unknown format\n");
                         }
                     }
-                    fclose(infile);
                 }
+                fclose(infile);
             }
             argcindex++;
         }
@@ -254,7 +254,7 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int vce2str(char *path,int vci) {
+int vce2str(char *path,int vci,int fix_blend) {
 
     vcefile vce;
     char stringg[200];
@@ -329,6 +329,14 @@ int vce2str(char *path,int vci) {
         for (j=0 ; j < vce.firstlayer.getlast()->anikeynum ; j++) {
             if (j!=0) anikey(vce.firstlayer.getlast()->firstanikey.getlast()) ; //create anikey and chain it
             fread(&(vce.firstlayer.getlast()->firstanikey.getlast()->data), sizeof(struct anikey_s), 1, infile);
+            if (fix_blend==1) {
+                unsigned long *source= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.blend[0]);
+                unsigned long *dest= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.blend[1]);
+                if (  (*dest)<3 && (*source)<3 ) {
+                        *source=1;
+                        *dest=2;
+                    }
+            }
             fwrite(&(vce.firstlayer.getlast()->firstanikey.getlast()->data), sizeof(struct anikey_s), 1, outfile);
         }
 
