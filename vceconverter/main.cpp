@@ -7,11 +7,10 @@ using namespace std;
 #include <stdlib.h>
 #define nullptr NULL
 
-char title_text[]="VCE2STR converter v1.2 (C) github.com/ADHSoft .\n";
+char title_text[]="VCE2STR converter\n";
 char readme[]="License GNUGPLv3\n\
-The Vce/vci file format is used for UI's and bg animations in the djm. series.\n\
+The Vce/vci file format is used for UI's and bg animations in some old games.\n\
 The str format is from the R.O. misc. animations. \n\
-This format is still being used in the PSVita(tm) DJM. game for the UI. \n\
 \n\
 This program aims to convert VCEs into STRs so you can edit them\n\
 using the existing STR editors, like the buggy 'RO STR Viewer'.\n\

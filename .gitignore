@@ -53,3 +53,5 @@ dkms.conf
 *.depend
 *.vci
 *.str
+vceconverter/vceconverter.layout
+vceconverter/vceconverter.depend
