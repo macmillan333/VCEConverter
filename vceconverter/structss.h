@@ -27,8 +27,8 @@ typedef struct texture_s texture_t;
 
 struct anikey_s
 {
-    unsigned long frame;
-    unsigned long unk1;  //show,anitype,delay,aniframe?
+    unsigned long frameTime;
+    unsigned long frameType;  
     float pos[2];//order: x,y
     float uv[2];
     float uvs[2];
@@ -37,10 +37,10 @@ struct anikey_s
     float points[8]; //order: x1,x2,x3,x4,y1,y2,y3,y4
     float unk2;
     float tex_id;
-    unsigned long mode;//texture inc. direction
-    float inccount;//texture increment
+    unsigned long mode;//texture inc. mode
+    float inccount;//texture delta increment
     float color[4]; //rgba
-    unsigned long blend[3];//source,dest,?
+    unsigned long blend[3];//source,dest,multiTexMode
 
 };
 
