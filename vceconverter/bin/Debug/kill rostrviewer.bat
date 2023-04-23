@@ -1,1 +1,0 @@
-taskkill /im TranslatedROSTRviewer.exe
