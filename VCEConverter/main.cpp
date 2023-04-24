@@ -24,28 +24,21 @@ public:
     anikey_t data;
     anikey *next;
 
-    anikey(){
-        next=nullptr;
-    }
+    anikey() : data(), next(nullptr) { }
+
     anikey* getlast () {
         //find last node
-        anikey *temp = new anikey;
-        temp=this;
-
+        anikey *temp = this;
         while (temp->next!=nullptr) {
             temp=temp->next;
         }
-
         return temp;
     }
-    anikey(anikey *a){ //create and link node
-        anikey *last = new anikey , *temp = new anikey;
-        last->next=nullptr;
-        temp=a->getlast();
-        temp->next=last;
 
+    static void addafterlast(anikey *a){ //create and link node
+        anikey *last = new anikey();
+        a->getlast()->next=last;
     }
-
 };
 
 class texture {
@@ -53,62 +46,47 @@ public:
     texture_t data;
     texture *next;
 
-    texture(){
-        next=nullptr;
-    }
+    texture() : data(), next(nullptr) { }
+
     texture* getlast () {
         //find last node
-        texture *temp = new texture;
-        temp=this;
-
+        texture *temp = this;
         while (temp->next!=nullptr) {
             temp=temp->next;
         }
-
         return temp;
     }
-    texture(texture *a){ //create and link node
-        texture *last = new texture , *temp = new texture;
-        last->next=nullptr;
-        temp=a->getlast();
 
-        temp->next=last;
+    static void addafterlast(texture *a){ //create and link node
+        texture *last = new texture();
+        a->getlast()->next=last;
     }
-
 };
 
 class layer {
-    public:
+public:
     char vci_layer_data[0x5c];
     unsigned long texcnt;
     texture firsttex;
     layer *next;
     unsigned long anikeynum=0;
     anikey firstanikey;
-    layer(){
-        this->next=nullptr;
-    }
+
+    layer() : vci_layer_data(), texcnt(0), next(nullptr) { }
 
     layer* getlast () {
         //find last node
-        layer *temp = new layer;
-        temp=this;
-
+        layer *temp = this;
         while (temp->next!=nullptr) {
             temp=temp->next;
         }
-
         return temp;
     }
-    layer(layer *a){ //create and link node
-        layer *last = new layer , *temp = new layer;
-        last->next=nullptr;
-        temp=a->getlast();
 
-        temp->next=last;
-
+    static void addafterlast(layer *a){ //create and link node
+        layer* last = new layer();
+        a->getlast()->next=last;
     }
-
 };
 
 class vcefile {
@@ -117,6 +95,7 @@ public:
     header_t header;
     layer firstlayer;
 
+    vcefile() : header(), firstlayer() { }
 };
 
 void texname2str(char *name) {
@@ -283,7 +262,7 @@ int vce2str(char *path,int vci,int fix_blend) {
 
         printf("Layer %d ",i);
 
-        if (i!=0) layer(&vce.firstlayer) ; //new layer and link it
+        if (i!=0) layer::addafterlast(&vce.firstlayer) ; //new layer and link it
 
         if (vci==1) fread(vce.firstlayer.getlast()->vci_layer_data, sizeof(char), 0x5c, infile);
         if (strcmp(vce.firstlayer.getlast()->vci_layer_data,"#MOVIE#")==0) printf("\"movie\"");
@@ -299,7 +278,7 @@ int vce2str(char *path,int vci,int fix_blend) {
         for (j=0;j<0x80;j++) strtexname[j]=0;
 
         for (j=0 ; j < vce.firstlayer.getlast()->texcnt ; j++) {
-            if (j!=0) texture(&(vce.firstlayer.getlast()->firsttex)) ; //create tex and chain it
+            if (j!=0) texture::addafterlast(&(vce.firstlayer.getlast()->firsttex)) ; //create tex and chain it
             fread(&(vce.firstlayer.getlast()->firsttex.getlast()->data), sizeof(struct texture_s), 1, infile);
             printf("%s ",vce.firstlayer.getlast()->firsttex.getlast()->data.texname);
             strcpy(strtexname,vce.firstlayer.getlast()->firsttex.getlast()->data.texname);
@@ -319,7 +298,7 @@ int vce2str(char *path,int vci,int fix_blend) {
 
         //read anikeys of layer
         for (j=0 ; j < vce.firstlayer.getlast()->anikeynum ; j++) {
-            if (j!=0) anikey(vce.firstlayer.getlast()->firstanikey.getlast()) ; //create anikey and chain it
+            if (j!=0) anikey::addafterlast(vce.firstlayer.getlast()->firstanikey.getlast()) ; //create anikey and chain it
             fread(&(vce.firstlayer.getlast()->firstanikey.getlast()->data), sizeof(struct anikey_s), 1, infile);
             if (fix_blend==1) {
                 unsigned long *sourceBlend= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.blend[0]);
@@ -330,12 +309,12 @@ int vce2str(char *path,int vci,int fix_blend) {
                     }
             }
             //fix frametype
-			unsigned long *frameType= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.frameType);
-			if (((*frameType)&1)==0) {
-				*frameType=0;
-			} else {
-				*frameType=1;
-			}
+            unsigned long *frameType= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.frameType);
+            if (((*frameType)&1)==0) {
+                *frameType=0;
+            } else {
+                *frameType=1;
+            }
             fwrite(&(vce.firstlayer.getlast()->firstanikey.getlast()->data), sizeof(struct anikey_s), 1, outfile);
         }
 
@@ -345,6 +324,7 @@ int vce2str(char *path,int vci,int fix_blend) {
     fflush(outfile);
     fclose(outfile);
 
+    return 0;
 }
 
 void unmask_vc(char *path){
@@ -359,14 +339,13 @@ void unmask_vc(char *path){
     };
 
     int c, i, k_pos,header;
-    char str[200];
     char *buf=NULL;
     long int size,f_pos=0;
 
-	FILE *f;
+    FILE *f;
 
-	f=infile;
-	rewind(f);
+    f=infile;
+    rewind(f);
 
     //copy file to buf
     fseek(f, 0, SEEK_END);
@@ -406,7 +385,7 @@ void unmask_vc(char *path){
         if (f_pos==size) break; //if end of file
     }
 
-    delete buf;
+    delete[] buf;
     fflush(f);
     fclose(f);
     infile = fopen (path,"rb"); //reopen file
