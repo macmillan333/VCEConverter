@@ -17,6 +17,13 @@ typedef struct header_s header_t;
 struct texture_s
 {
     char texname[0x70];
+
+    // DJMAX specific:
+    // When interpreted as int16_t,
+    // texture coordinates are
+    // (texcoord[8], texcoord[9]) - (texcoord[10], texcoord[11]).
+    // (0, 0) is top left of image.
+    // If all 4 numbers are -1, use the entire image.
     unsigned char texcoord[0x1c];
 
     //str: texname only=0x80
