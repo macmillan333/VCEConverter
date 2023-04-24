@@ -263,59 +263,64 @@ int vce2str(char *path,int vci,int fix_blend) {
         printf("Layer %d ",i);
 
         if (i!=0) layer::addafterlast(&vce.firstlayer) ; //new layer and link it
+        layer* lastlayer = vce.firstlayer.getlast();
 
-        if (vci==1) fread(vce.firstlayer.getlast()->vci_layer_data, sizeof(char), 0x5c, infile);
-        if (strcmp(vce.firstlayer.getlast()->vci_layer_data,"#MOVIE#")==0) printf("\"movie\"");
+        if (vci==1) fread(lastlayer->vci_layer_data, sizeof(char), 0x5c, infile);
+        if (strcmp(lastlayer->vci_layer_data,"#MOVIE#")==0) printf("\"movie\"");
 
-        fread(&(vce.firstlayer.getlast()->texcnt), sizeof(unsigned long), 1, infile);    //texcnt
-        fwrite(&(vce.firstlayer.getlast()->texcnt),sizeof (unsigned long),1,outfile);
+        fread(&(lastlayer->texcnt), sizeof(unsigned long), 1, infile);    //texcnt
+        fwrite(&(lastlayer->texcnt),sizeof (unsigned long),1,outfile);
 
-        printf(": %lu texture(s) : ",vce.firstlayer.getlast()->texcnt);
+        printf(": %lu texture(s) : ",lastlayer->texcnt);
         //read textures of layer
         int j;
 
         char strtexname[0x80];
         for (j=0;j<0x80;j++) strtexname[j]=0;
 
-        for (j=0 ; j < vce.firstlayer.getlast()->texcnt ; j++) {
-            if (j!=0) texture::addafterlast(&(vce.firstlayer.getlast()->firsttex)) ; //create tex and chain it
-            fread(&(vce.firstlayer.getlast()->firsttex.getlast()->data), sizeof(struct texture_s), 1, infile);
-            printf("%s ",vce.firstlayer.getlast()->firsttex.getlast()->data.texname);
-            strcpy(strtexname,vce.firstlayer.getlast()->firsttex.getlast()->data.texname);
+        for (j=0 ; j < lastlayer->texcnt ; j++) {
+            if (j!=0) texture::addafterlast(&(lastlayer->firsttex)) ; //create tex and chain it
+            texture* lasttex = lastlayer->firsttex.getlast();
+
+            fread(&(lasttex->data), sizeof(struct texture_s), 1, infile);
+            printf("%s ",lasttex->data.texname);
+            strcpy(strtexname,lasttex->data.texname);
             if (bmp_conv == 1){
                 tex2bmp(strtexname);
                 texname2str(strtexname);
             }
             fwrite(strtexname, 0x64, 1, outfile);
             //store texcoord at last 1Ch bytes
-            fwrite(vce.firstlayer.getlast()->firsttex.getlast()->data.texcoord, 0x1c, 1, outfile);
+            fwrite(lasttex->data.texcoord, 0x1c, 1, outfile);
         }
 
         //anikeynum
-        fread(&(vce.firstlayer.getlast()->anikeynum), sizeof(unsigned long), 1, infile);
-        fwrite(&(vce.firstlayer.getlast()->anikeynum),sizeof (unsigned long),1,outfile);
-        printf("\n(Key)Frame(s): %lu \n",vce.firstlayer.getlast()->anikeynum);
+        fread(&(lastlayer->anikeynum), sizeof(unsigned long), 1, infile);
+        fwrite(&(lastlayer->anikeynum),sizeof (unsigned long),1,outfile);
+        printf("\n(Key)Frame(s): %lu \n",lastlayer->anikeynum);
 
         //read anikeys of layer
-        for (j=0 ; j < vce.firstlayer.getlast()->anikeynum ; j++) {
-            if (j!=0) anikey::addafterlast(vce.firstlayer.getlast()->firstanikey.getlast()) ; //create anikey and chain it
-            fread(&(vce.firstlayer.getlast()->firstanikey.getlast()->data), sizeof(struct anikey_s), 1, infile);
+        for (j=0 ; j < lastlayer->anikeynum ; j++) {
+            if (j!=0) anikey::addafterlast(&(lastlayer->firstanikey)) ; //create anikey and chain it
+            anikey* lastkey = lastlayer->firstanikey.getlast();
+
+            fread(&(lastkey->data), sizeof(struct anikey_s), 1, infile);
             if (fix_blend==1) {
-                unsigned long *sourceBlend= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.blend[0]);
-                unsigned long *destBlend= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.blend[1]);
+                unsigned long *sourceBlend= &(lastkey->data.blend[0]);
+                unsigned long *destBlend= &(lastkey->data.blend[1]);
                 if (  (*destBlend)<3 && (*sourceBlend)<3 ) {
                         *sourceBlend=1;
                         *destBlend=2;
                     }
             }
             //fix frametype
-            unsigned long *frameType= &(vce.firstlayer.getlast()->firstanikey.getlast()->data.frameType);
+            unsigned long *frameType= &(lastkey->data.frameType);
             if (((*frameType)&1)==0) {
                 *frameType=0;
             } else {
                 *frameType=1;
             }
-            fwrite(&(vce.firstlayer.getlast()->firstanikey.getlast()->data), sizeof(struct anikey_s), 1, outfile);
+            fwrite(&(lastkey->data), sizeof(struct anikey_s), 1, outfile);
         }
 
     }
