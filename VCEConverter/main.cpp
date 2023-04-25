@@ -7,6 +7,7 @@ using namespace std;
 #include "string.h"
 #include "stdio.h"
 #include <stdlib.h>
+#include <string>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -19,10 +20,11 @@ char title_text[]="VCE2STR converter\n";
 char readme[]="The Vce/vci file format is used for UI and animations in old games.\n\
 The str format comes originally from ez2dj \n\
 \n\
-USAGE: vceconverter -f -m -b file1.vce (file2.vce) (...) \n\
+USAGE: vceconverter -f -m -b -c file1.vce (file2.vce) (...) \n\
 Parameters: -m : Just decode a file\n\
 -f : for rostrviewer compatibility , convert image files to .bmp, with imagemagick, and change the texturefilename references.\n\
 -b : change color blend to make rostrviewer work.\n\
+-c : crop images that are not used in their entirely.\n\
 valid input files: vce or vci (autodetected)\n";
 
 class anikey{   //(aka key frame)
@@ -147,12 +149,12 @@ void tex2bmp(char *filename){
     }
 }
 
-int vce2str(char*,int,int);
+int vce2str(const std::string&,int,int,int);
 void unmask_vc(char *);
 void printvcq();
 
 FILE *infile;
-int just_mask=0,bmp_conv=0,masked,vce,vci,vcq,fix_blend=0;
+int just_mask=0,bmp_conv=0,masked,vce,vci,vcq,fix_blend=0,crop_images=0;
 
 int main(int argc, char *argv[])
 {
@@ -173,6 +175,7 @@ int main(int argc, char *argv[])
                 if (strcmp(argv[argcindex],"-m")==0) just_mask=1;
                 if (strcmp(argv[argcindex],"-b")==0) fix_blend=1;
                 if (strcmp(argv[argcindex],"-f")==0) bmp_conv=1;
+                if (strcmp(argv[argcindex], "-c") == 0) crop_images = 1;
             } else {
 
                 infile = fopen (argv[argcindex],"rb");
@@ -207,7 +210,7 @@ int main(int argc, char *argv[])
 
                         if (just_mask==0) {
                             if (masked==1) unmask_vc(argv[argcindex]);
-                            vce2str(argv[argcindex],vci,fix_blend);
+                            vce2str(argv[argcindex],vci,fix_blend,crop_images);
                             if (masked==1) unmask_vc(argv[argcindex]);//re mask
                         } else {
                             unmask_vc(argv[argcindex]);//mask
@@ -231,15 +234,18 @@ int main(int argc, char *argv[])
     return 0;
 }
 
-int vce2str(char *path,int vci,int fix_blend) {
+int vce2str(const std::string& path,int vci,
+    int fix_blend, int crop_images) {
+    // Parse path
+    size_t lastslash = path.find_last_of("/\\");
+    size_t lastdot = path.find_last_of('.');
+    std::string dir = path.substr(0, lastslash);
+    std::string basename = path.substr(lastslash + 1,
+        lastdot - lastslash - 1);
 
     vcefile vce;
-    char stringg[200];
-    FILE *outfile ;
-
-    strcpy(stringg,path);
-    strcat(stringg,".str");
-    outfile = fopen (stringg,"wb") ;
+    std::string outpath = dir + '\\' + basename + ".str";
+    FILE* outfile = fopen (outpath.c_str(), "wb");
 
     if (outfile==nullptr) {
         printf("Error writing file\n");
