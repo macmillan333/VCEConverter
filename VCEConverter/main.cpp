@@ -8,6 +8,7 @@ using namespace std;
 #include "stdio.h"
 #include <stdlib.h>
 #include <string>
+#include <sstream>
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb/stb_image.h"
@@ -20,9 +21,8 @@ char title_text[]="VCE2STR converter\n";
 char readme[]="The Vce/vci file format is used for UI and animations in old games.\n\
 The str format comes originally from ez2dj \n\
 \n\
-USAGE: vceconverter -f -m -b -c file1.vce (file2.vce) (...) \n\
+USAGE: vceconverter -m -b -c file1.vce (file2.vce) (...) \n\
 Parameters: -m : Just decode a file\n\
--f : for rostrviewer compatibility , convert image files to .bmp, with imagemagick, and change the texturefilename references.\n\
 -b : change color blend to make rostrviewer work.\n\
 -c : crop images that are not used in their entirely.\n\
 valid input files: vce or vci (autodetected)\n";
@@ -106,11 +106,6 @@ public:
     vcefile() : header(), firstlayer() { }
 };
 
-void texname2str(char *name) {
-    //append bmp extension
-    strcat(name,".bmp");
-}
-
 void tex2bmp(char *filename){
 
     FILE *batfile,*tmp;
@@ -154,7 +149,7 @@ void unmask_vc(char *);
 void printvcq();
 
 FILE *infile;
-int just_mask=0,bmp_conv=0,masked,vce,vci,vcq,fix_blend=0,crop_images=0;
+int just_mask=0,masked,vce,vci,vcq,fix_blend=0,crop_images=0;
 
 int main(int argc, char *argv[])
 {
@@ -174,7 +169,6 @@ int main(int argc, char *argv[])
             if (argv[argcindex][0]=='-') {
                 if (strcmp(argv[argcindex],"-m")==0) just_mask=1;
                 if (strcmp(argv[argcindex],"-b")==0) fix_blend=1;
-                if (strcmp(argv[argcindex],"-f")==0) bmp_conv=1;
                 if (strcmp(argv[argcindex], "-c") == 0) crop_images = 1;
             } else {
 
@@ -232,6 +226,79 @@ int main(int argc, char *argv[])
     }
 
     return 0;
+}
+
+std::string maybecropimage(const std::string& dir, const texture_t& tex) {
+    std::string filename(tex.texname);
+
+    // Parse tex coords
+    int16_t x1 = *(reinterpret_cast<const int16_t*>(tex.texcoord + 16));
+    int16_t y1 = *(reinterpret_cast<const int16_t*>(tex.texcoord + 18));
+    int16_t x2 = *(reinterpret_cast<const int16_t*>(tex.texcoord + 20));
+    int16_t y2 = *(reinterpret_cast<const int16_t*>(tex.texcoord + 22));
+    if (x1 > x2)
+    {
+        int16_t tmp = x1;
+        x1 = x2;
+        x2 = tmp;
+    }
+    if (y1 > y2)
+    {
+        int16_t tmp = y1;
+        y1 = y2;
+        y2 = tmp;
+    }
+    printf("tex coords: %d %d %d %d", x1, y1, x2, y2);
+    if (x1 < 0 || y1 < 0 || x2 < 0 || y2 < 0) return filename;
+
+    // Generate filename
+    size_t lastdot = filename.find_last_of('.');
+    std::string basename = filename.substr(0, lastdot);
+    std::string extension = filename.substr(lastdot + 1);
+    std::stringstream outputnamestream;
+    outputnamestream << basename << x1 << y1 << x2 << y2 << '.' << extension;
+    std::string outputname = outputnamestream.str();
+    std::string fulloutputpath = dir + '\\' + outputname;
+    printf("\nWill crop to: %s", outputname.c_str());
+
+    // Read input
+    std::string fullinputpath = dir + '\\' + filename;
+    int x, y, channels;
+    unsigned char* imagedata = stbi_load(fullinputpath.c_str(),
+        &x, &y, &channels, 0);
+    if (imagedata == nullptr) {
+        printf("\n%s\n", stbi_failure_reason());
+        exit(1);
+    }
+
+    // Allocate cropped image data
+    int outputsize = (x2 - x1) * (y2 - y1) * channels;
+    unsigned char* outputdata = (unsigned char*)malloc(outputsize);
+    int outputptr = 0;
+
+    // Perform crop
+    for (int row = y1; row < y2; row++)
+    {
+        for (int col = x1; col < x2; col++)
+        {
+            for (int channel = 0; channel < channels; channel++)
+            {
+                outputdata[outputptr] = imagedata[(row * y + col) * channels + channel];
+                outputptr++;
+            }
+        }
+    }
+
+    // Write to file
+    if (stbi_write_png(fulloutputpath.c_str(), x2 - x1, y2 - y1, channels, outputdata, /*stride_in_bytes=*/(x2 - x1) * channels) == 0) {
+        printf("\nFailed to write output file\n");
+        exit(1);
+    }
+
+    // Free
+    free(outputdata);
+    stbi_image_free(imagedata);
+    return outputname;
 }
 
 int vce2str(const std::string& path,int vci,
@@ -296,10 +363,13 @@ int vce2str(const std::string& path,int vci,
 
             fread(&(lasttex->data), sizeof(struct texture_s), 1, infile);
             printf("%s ",lasttex->data.texname);
-            strcpy(strtexname,lasttex->data.texname);
-            if (bmp_conv == 1){
-                tex2bmp(strtexname);
-                texname2str(strtexname);
+            if (crop_images == 1){
+                std::string maybecroppedimagename = 
+                    maybecropimage(dir, lasttex->data);
+                strcpy(strtexname, maybecroppedimagename.c_str());
+            }
+            else {
+                strcpy(strtexname, lasttex->data.texname);
             }
             fwrite(strtexname, 0x64, 1, outfile);
             //store texcoord at last 1Ch bytes
