@@ -396,6 +396,9 @@ int vce2str(const std::string& path,int vci,
                         *destBlend=2;
                     }
             }
+            //fix position
+            lastkey->data.pos[0] += 319;
+            lastkey->data.pos[1] += 291;
             //fix frametype
             unsigned long *frameType= &(lastkey->data.frameType);
             if (((*frameType)&1)==0) {
