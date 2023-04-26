@@ -284,7 +284,7 @@ std::string maybecropimage(const std::string& dir, const texture_t& tex) {
         {
             for (int channel = 0; channel < channels; channel++)
             {
-                outputdata[outputptr] = imagedata[(row * y + col) * channels + channel];
+                outputdata[outputptr] = imagedata[(row * x + col) * channels + channel];
                 outputptr++;
             }
         }
