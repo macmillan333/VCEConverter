@@ -204,7 +204,8 @@ int main(int argc, char *argv[])
 
                         if (just_mask==0) {
                             if (masked==1) unmask_vc(argv[argcindex]);
-                            vce2str(argv[argcindex],vci,fix_blend,crop_images);
+                            int returnvalue = vce2str(argv[argcindex],vci,fix_blend,crop_images);
+                            if (returnvalue != 0) return returnvalue;
                             if (masked==1) unmask_vc(argv[argcindex]);//re mask
                         } else {
                             unmask_vc(argv[argcindex]);//mask
@@ -268,7 +269,7 @@ std::string maybecropimage(const std::string& dir, const texture_t& tex) {
         &x, &y, &channels, 0);
     if (imagedata == nullptr) {
         printf("\n%s\n", stbi_failure_reason());
-        exit(1);
+        exit(-1);
     }
 
     // Allocate cropped image data
@@ -292,7 +293,7 @@ std::string maybecropimage(const std::string& dir, const texture_t& tex) {
     // Write to file
     if (stbi_write_png(fulloutputpath.c_str(), x2 - x1, y2 - y1, channels, outputdata, /*stride_in_bytes=*/(x2 - x1) * channels) == 0) {
         printf("\nFailed to write output file\n");
-        exit(1);
+        exit(-1);
     }
 
     // Free
