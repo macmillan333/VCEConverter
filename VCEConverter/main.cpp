@@ -403,6 +403,10 @@ int vce2str(const std::string& path,int vci,
             } else {
                 *frameType=1;
             }
+            //fix angle. In VCE, 360 = full circle; in STR, 1024 = full circle.
+            float* rotation = &(lastkey->data.rotation);
+            *rotation = *rotation * 1024 / 360;
+
             fwrite(&(lastkey->data), sizeof(struct anikey_s), 1, outfile);
         }
 
