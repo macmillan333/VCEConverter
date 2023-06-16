@@ -272,6 +272,12 @@ std::string maybecropimage(const std::string& dir, const texture_t& tex) {
         exit(-1);
     }
 
+    // Wrap tex coords because why not
+    // x1 %= x;
+    // x2 %= x;
+    y1 %= y;
+    y2 %= y;
+
     // Allocate cropped image data
     int outputsize = (x2 - x1) * (y2 - y1) * channels;
     unsigned char* outputdata = (unsigned char*)malloc(outputsize);
