@@ -149,81 +149,94 @@ void unmask_vc(char *);
 void printvcq();
 
 FILE *infile;
-int just_mask=0,masked,vce,vci,vcq,fix_blend=0,crop_images=0;
+int just_mask = 0, fix_blend = 0, crop_images = 0;
+int masked, vce, vci, vcq;
 
 int main(int argc, char *argv[])
 {
-    int argcindex=1;
+    int argcindex = 1;
 
     unsigned char stringg[100];
 
     if (argc == 1) {	//no parameter, print help
         printf("%s",title_text);
-         printf("%s",readme);
-         return -1;
+        printf("%s",readme);
+        return -1;
+    }
+    
+    printf("%s",title_text);
 
-    } else { //parse params
-        printf("%s",title_text);
-
-        while (argcindex<argc) {
-            if (argv[argcindex][0]=='-') {
-                if (strcmp(argv[argcindex],"-m")==0) just_mask=1;
-                if (strcmp(argv[argcindex],"-b")==0) fix_blend=1;
-                if (strcmp(argv[argcindex], "-c") == 0) crop_images = 1;
-            } else {
-
-                infile = fopen (argv[argcindex],"rb");
-                if (infile==nullptr) {
-                    printf("Error opening file %s\n",argv[argcindex]);
-                    return -1;
-                } else {    //check format
-                    printf("Opened %s \n",argv[argcindex]);
-                    fread(stringg,sizeof(char),0x40,infile);
-                    masked=0;
-                    vce=0;
-                    vci=0;
-                    vcq=0;
-                    if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='M') { //vce/i
-                        printf("Type: ");
-                        if (stringg[13]!=0) {
-                            masked=1;
-                        } else {
-                            printf("Unmasked ");
-                        }
-                        char a;
-                        a=argv[argcindex][strlen(argv[argcindex])-1];
-                        if ( a=='I' || a=='i' ) {
-                            vci=1;
-                            printf("VCI file\n");
-                        } else {
-                            vce=1;
-                            printf("VCE file\n");
-                        }
-
-                        rewind(infile);
-
-                        if (just_mask==0) {
-                            if (masked==1) unmask_vc(argv[argcindex]);
-                            int returnvalue = vce2str(argv[argcindex],vci,fix_blend,crop_images);
-                            if (returnvalue != 0) return returnvalue;
-                            if (masked==1) unmask_vc(argv[argcindex]);//re mask
-                        } else {
-                            unmask_vc(argv[argcindex]);//mask
-                        }
-
-                    } else {    //not vce nor vci
-                        if (stringg[0]=='V'&&stringg[1]=='C'&&stringg[2]=='Q') {
-                            printf("Type: VCQ file\n");
-                            printvcq();
-                        } else {
-                            printf("Unknown format\n");
-                        }
-                    }
-                }
-                fclose(infile);
-            }
+    while (argcindex<argc) {
+        if (argv[argcindex][0]=='-') {
+            if (strcmp(argv[argcindex], "-m") == 0)
+                just_mask = 1;
+            if (strcmp(argv[argcindex], "-b") == 0)
+                fix_blend = 1;
+            if (strcmp(argv[argcindex], "-c") == 0)
+                crop_images = 1;
             argcindex++;
+            continue;
         }
+
+        const char* infile_name = argv[argcindex];
+        infile = fopen (infile_name,"rb");
+        if (infile==nullptr) {
+            printf("Error opening file %s\n",infile_name);
+            return -1;
+        } 
+
+        //check format
+        printf("Opened %s \n", infile_name);
+        fread(stringg, sizeof(char), 0x40, infile);
+        masked = 0;
+        vce = 0;
+        vci = 0;
+        vcq = 0;
+
+        if (stringg[0] == 'V' &&
+            stringg[1] == 'C' &&
+            stringg[2] == 'M') { //vce/i
+
+            printf("Type: ");
+            if (stringg[13]!=0) {
+                printf("Masked ");
+                masked = 1;
+            } else {
+                printf("Unmasked ");
+            }
+
+            char a;
+            a=infile_name[strlen(infile_name) - 1];
+            if ( a=='I' || a=='i' ) {
+                vci=1;
+                printf("VCI file\n");
+            } else {
+                vce=1;
+                printf("VCE file\n");
+            }
+
+            rewind(infile);
+
+            if (just_mask) {
+                unmask_vc(infile_name);
+            }
+            else {
+                if (masked == 1) unmask_vc(infile_name);
+                int returnvalue = vce2str(infile_name, vci, fix_blend, crop_images);
+                if (returnvalue != 0) return returnvalue;
+                if (masked == 1) unmask_vc(infile_name);//re mask
+            }
+        }
+        else if (stringg[0] == 'V' &&
+            stringg[1] == 'C' &&
+            stringg[2] == 'Q') {
+            printf("Type: VCQ file\n");
+            printvcq();
+        } else {
+            printf("Unknown format\n");
+        }
+        fclose(infile);
+        argcindex++;
     }
 
     return 0;
@@ -428,7 +441,7 @@ int vce2str(const std::string& path,int vci,
     return 0;
 }
 
-void unmask_vc(char *path){
+void unmask_vc(const char *path){
 
     #define MASK_LENGTH 256
     const unsigned char mask[] = {
